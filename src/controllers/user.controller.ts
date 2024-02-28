@@ -143,7 +143,7 @@ userController.post('/', adminMiddleware, async (req: Request, res: Response) =>
             name: name,
             username: username,
             signum: signum,
-            password: await Helpers.hash(username),
+            password: await Helpers.hash('password'),
             active: active,
             is_admin: isAdmin,
             manager: managerId

@@ -40,7 +40,7 @@ class Provision
         else
         {
             console.log('Admin provisioning complete.');
-            console.log(`Admin username/email: admin`);
+            console.log(`Admin username/email: admin@system.local`);
             console.log(`Admin passowrd: passowrd`);
         }
     }
