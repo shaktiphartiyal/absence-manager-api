@@ -7,7 +7,6 @@ import { Config } from '../config/config';
 import * as fs from 'fs';
 import path from 'path';
 import Logger from '../utils/logger';
-import { Mailer } from '../utils/mailer';
 
 export const leaveController = Router();
 
@@ -52,28 +51,6 @@ leaveController.post('/apply', async (req: Request, res: Response) => {
     {
         return Result.EXPECTATION_FAILED(res, {}, 'Unable to apply for leaves !');
     }
-
-    // try{
-    //     const managerDetails = await AppDataSource.query(
-    //         `SELECT um.username as manager_email FROM users as u
-    //          LEFT JOIN users as um ON u.manager = um.id
-    //          WHERE u.id = ?
-    //          `, [user.id]);
-    //     if(managerDetails.length > 0)
-    //     {
-    //         const managerEmail = managerDetails[0].manager_email;
-    //         const mailer = new Mailer();
-    //         const mailResult = await mailer.send({
-    //             receivers: managerEmail,
-    //             subject: 'TEST',
-    //             html: 'Hello <b> world</b> !'
-    //         }).catch(e => {
-    //             console.error(e);
-    //         });
-    //         console.log(mailResult);
-    //     }
-    // }
-    // catch(e){}
     return Result.CREATED(res, {}, 'Leaves applied successfully');
 });
 
