@@ -127,6 +127,7 @@ userController.post('/', adminMiddleware, async (req: Request, res: Response) =>
         .from('users', '')
         .where("users.id = :id", { id: managerId })
         .andWhere('users.is_admin = 1')
+        .andWhere('users.active = 1')
         .getRawOne();
         if(!managerDetails)
         {
@@ -200,6 +201,7 @@ userController.patch('/:userId', adminMiddleware, async (req: Request, res: Resp
         .from('users', '')
         .where("users.id = :id", { id: managerId })
         .andWhere('users.is_admin = 1')
+        .andWhere('users.active = 1')
         .getRawOne();
         if(!managerDetails)
         {
@@ -265,6 +267,96 @@ userController.delete('/:userId', adminMiddleware, async (req: Request, res: Res
     }
 });
 
+
+userController.post('/bulk-add', adminMiddleware, async (req: Request, res: Response) => {
+    const user = (req as any).authUser;
+    const users = req.body.users;
+    if(users.length < 0)
+    {
+        return Result.BAD_REQUEST(res, {}, 'Invalid user data');
+    }
+    const successfulEntries = [];
+    let index = 1;
+    for(let user of users)
+    {
+        const name = user.name.trim();
+        const username = user.username.trim();
+        const signum = user.signum.trim();
+        const password = user.password;
+        const status = user.status ? Number(user.status) : 1;
+        const team_name = user.team_name ? user.team_name : 0;
+        const is_admin = user.is_admin ? Number(user.is_admin) : 0;
+        const manager_signum = user.manager_signum ? user.manager_signum : null;
+        if(!name || !signum || !username || !manager_signum)
+        {
+            return Result.BAD_REQUEST(res, {}, `Missing or invalid data. Stopping at erroneous record : ${index}`);
+        }
+        const userExists = await checkIfActiveUserExists(username, signum);
+        if(userExists)
+        {
+            return Result.CONFLICT(res, {}, `An active user with this email/username/signum exists. Stopping at erroneous record : ${index}`);
+        }
+        const managerDetails = await AppDataSource
+        .createQueryBuilder()
+        .select('id')
+        .from('users', '')
+        .where("users.signum = :signum", { signum: manager_signum })
+        .andWhere('users.is_admin = 1')
+        .andWhere('users.active = 1')
+        .getRawOne();
+        if(!managerDetails)
+        {
+            return Result.BAD_REQUEST(res, {}, `Invalid manager selected. Stopping at erroneous record : ${index}`);
+        }
+        const newUser = await AppDataSource
+        .createQueryBuilder()
+        .insert()
+        .into('users')
+        .values([
+            {
+                name: name,
+                username: username,
+                signum: signum,
+                password: await Helpers.hash(password),
+                active: status,
+                is_admin: is_admin,
+                manager: managerDetails.id
+            }
+        ])
+        .execute();
+        if(!newUser)
+        {
+            return Result.EXPECTATION_FAILED(res, {}, `Unable to add user. Stopping at erroneous record : ${index}`);
+        }
+        const teamDetails = await AppDataSource
+        .createQueryBuilder()
+        .select('id')
+        .from('teams', '')
+        .where("teams.name = :name", { name: team_name })
+        .andWhere('teams.status = 1')
+        .getRawOne();
+        if(!teamDetails)
+        {
+            return Result.BAD_REQUEST(res, {}, `User successfully added but unable to add to team (Invalid team provided). Stopping at erroneous record : ${index}`);
+        }
+        const createdUserId = newUser.raw.insertId;
+        const addedToTeam = await addUserToTeam(createdUserId, teamDetails.id);
+        if(addedToTeam)
+        {
+            successfulEntries.push({
+                id: newUser.raw.insertId,
+                username: username,
+                signum: signum
+            });
+        }
+        else
+        {
+            return Result.CREATED(res, {id: newUser.raw.insertId}, `User created but not added to team. Stopping at erroneous record : ${index}`);
+        }
+        index++;
+    }
+    return Result.CREATED(res, {successfulEntries: successfulEntries}, 'Users created successfully');
+});
 
 // -------------- CUSTOM ROUTES
 
