@@ -5,16 +5,16 @@ import fs from 'fs';
 import { Config } from './config/config';
 import { intializeDB } from './db';
 import Logger from './utils/logger';
+import { startBackgroundService } from './services/background.service';
 
 intializeDB();
+startBackgroundService();
 
 const httpsOptions = {
-    key: fs.readFileSync(`${__dirname}/../certs/key.pem`),
-    cert: fs.readFileSync(`${__dirname}/../certs/cert.pem`)
+    key: fs.readFileSync(`${__dirname}/certs/key.pem`),
+    cert: fs.readFileSync(`${__dirname}/certs/cert.pem`)
   };
 const server = https.createServer(httpsOptions, app);
-// const insecureServer = http.createServer(app);
-
 
 server.listen(Config.serverPort, () => 
 {

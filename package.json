@@ -5,8 +5,8 @@
   "author": "Shakti Phartiyal",
   "license": "MIT",
   "scripts": {
-    "build": "npx tsc",
-    "serve": "node./dist/index.js",
+    "build": "npx tsc && cp -r ./src/static ./dist &&  cp -r ./src/certs ./dist",
+    "serve": "node ./dist/index.js",
     "dev": "ts-node-dev --respawn ./src/index.ts",
     "ui": "cd /home/hk009/codes/angular/absence-manager && ng serve",
     "start": "concurrently \"npm run dev\" \"npm run ui\"",

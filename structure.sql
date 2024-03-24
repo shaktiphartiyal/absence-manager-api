@@ -92,5 +92,32 @@ ALTER TABLE `users`
 
 ALTER TABLE `users`
   MODIFY `id` int NOT NULL AUTO_INCREMENT;
+
+ALTER TABLE `users` ADD `forgot_link_sent_at` DATETIME NULL DEFAULT NULL AFTER `password`;
+COMMIT;
+-- --------------------------------------------------------
+
+
+-- --------------------------------------------------------
+--
+-- Table structure for table `mailers`
+--
+START TRANSACTION;
+CREATE TABLE `notifications` (
+  `id` INT NOT NULL ,
+  `channel` VARCHAR(100) NOT NULL ,
+  `receiver` VARCHAR(100) NOT NULL ,
+  `subject` VARCHAR(250) NULL ,
+  `text` TEXT NULL,
+  `html` TEXT NULL,
+  `status` TINYINT(1) NOT NULL DEFAULT '0' COMMENT '0 = queued | 1 = in progress | 2 = sent | 3 = failed',
+  `result` VARCHAR(250) NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP  
+) ENGINE = InnoDB  DEFAULT CHARSET=utf8mb4;
+ALTER TABLE `notifications`
+  ADD PRIMARY KEY (`id`);
+ALTER TABLE `notifications`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
 COMMIT;
 -- --------------------------------------------------------

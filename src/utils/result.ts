@@ -9,6 +9,13 @@ export class Result
             message: message
         })
     }
+    public static async IMATP(res: Response, data: any = {}, message: string = "I'M A TEAPOT")
+    {
+        return res.status(STATUS.IM_A_TEAPOT).json({
+            data: data,
+            message: message
+        })
+    }
     public static async CREATED(res: Response, data: any = {}, message: string = 'CREATED')
     {
         return res.status(STATUS.CREATED).json({

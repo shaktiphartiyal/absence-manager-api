@@ -7,6 +7,7 @@ import { Config } from '../config/config';
 import * as fs from 'fs';
 import path from 'path';
 import Logger from '../utils/logger';
+import { BackgroundService } from '../services/background.service';
 
 export const leaveController = Router();
 
@@ -50,6 +51,33 @@ leaveController.post('/apply', async (req: Request, res: Response) => {
     if(!insertResult)
     {
         return Result.EXPECTATION_FAILED(res, {}, 'Unable to apply for leaves !');
+    }
+    try
+    {
+        let filecontent = fs.readFileSync(`${__dirname}/../static/mail-templates/leave-application.html`, 'utf8');
+        let mailContent = await AppDataSource.query(`
+            SELECT um.username as manager_email, um.name as manager_name, u.name as employee_name, u.signum
+            FROM users as u
+            JOIN users as um ON u.manager = um.id
+            WHERE u.id = ?;
+        `, [user.id]);
+        if(mailContent.length > 0)
+        {
+            mailContent = mailContent[0];
+        }
+        const formattedLeaveDates = selectedDates.map((x:any) => Helpers.formatDate(new Date(x)));
+        filecontent = filecontent.replace(/{{MANAGER_NAME}}/g, mailContent.manager_name)
+                      .replace(/{{EMPLOYEE_NAME}}/g, mailContent.employee_name)
+                      .replace(/{{EMPLOYEE_SIGNUM}}/g, mailContent.signum)
+                      .replace(/{{DATES}}/g, formattedLeaveDates.join(', '))
+                      .replace(/{{REASON}}/g, reason);
+        BackgroundService.SendNotification('EMAIL', {
+            receiver: mailContent.manager_email,
+            subject: 'New Leave application',
+            html: filecontent
+        });
+    } catch (err) {
+        console.error(err);
     }
     return Result.CREATED(res, {}, 'Leaves applied successfully');
 });
